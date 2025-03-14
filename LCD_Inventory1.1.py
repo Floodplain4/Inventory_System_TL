@@ -110,6 +110,29 @@ def handle_update_status():
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to update.")
 
+# Initialize sorting order for each column
+sort_order = {col: False for col in ["Work Order", "Serial Number", "Status", "Notes", "Timestamp"]}
+
+def sort_treeview(column_index):
+    global sort_order
+    # Read the current data from the Treeview
+    rows = [tree.item(item)['values'] for item in tree.get_children()]
+    
+    # Determine the column to sort by
+    column = tree_columns[column_index]
+    
+    # Toggle the sorting order
+    sort_order[column] = not sort_order[column]
+    
+    # Sort the rows based on the selected column
+    rows.sort(key=lambda x: x[column_index], reverse=sort_order[column])
+    
+    # Clear the Treeview and reinsert sorted data
+    for item in tree.get_children():
+        tree.delete(item)
+    for row in rows:
+        tree.insert('', 'end', values=row)
+        
 def handle_delete_entry():
     selected_item = tree.selection()
     if selected_item:
@@ -423,6 +446,12 @@ tree_columns = ("Work Order", "Serial Number", "Status", "Notes", "Timestamp")
 tree = ttk.Treeview(frame_tree, columns=tree_columns, show='headings')
 for col in tree_columns:
     tree.heading(col, text=col)
+tree.pack(fill=tk.BOTH, expand=True)
+
+# Bind the sorting function to each column header
+for index, col in enumerate(tree_columns):
+    tree.heading(col, text=col, command=lambda idx=index: sort_treeview(idx))
+
 tree.pack(fill=tk.BOTH, expand=True)
 
 # Add a scrollbar to the treeview
