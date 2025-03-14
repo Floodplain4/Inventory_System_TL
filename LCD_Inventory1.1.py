@@ -95,13 +95,15 @@ def handle_update_status():
     if selected_item:
         item = tree.item(selected_item)
         if len(item['values']) == 5:
-            work_order, serial_number, _, _, _ = item['values']
+            # Convert work_order and serial_number to strings
+            work_order = str(item['values'][0])  # Ensure it's a string
+            serial_number = str(item['values'][1])  # Ensure it's a string
             new_status = combo_update_status.get()
-            print(f"Selected Work Order: {work_order}, Serial Number: {serial_number}, New Status: {new_status}")  # Debugging output
             if new_status:
-                update_status(work_order, serial_number, new_status)
-                # Update the selected item's status in the treeview
-                tree.item(selected_item, values=(work_order, serial_number, new_status, item['values'][3], item['values'][4]))
+                update_status(work_order.strip(), serial_number.strip(), new_status)  # Strip whitespace
+                # Refresh the log to ensure the Treeview is updated
+                display_log()  # Refresh the displayed log
+                update_dashboard()  # Refresh the dashboard
                 combo_update_status.set('')
             else:
                 messagebox.showwarning("Input Error", "Please select a new status.")
@@ -109,7 +111,7 @@ def handle_update_status():
             messagebox.showwarning("Data Error", "Selected entry does not have the correct number of columns.")
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to update.")
-
+        
 # Initialize sorting order for each column
 sort_order = {col: False for col in ["Work Order", "Serial Number", "Status", "Notes", "Timestamp"]}
 
