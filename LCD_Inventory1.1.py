@@ -134,64 +134,52 @@ def sort_treeview(column_index):
         tree.insert('', 'end', values=row)
         
 def handle_delete_entry():
-    selected_item = tree.selection()
-    if selected_item:
-        item = tree.item(selected_item)
-        print(f"Selected item values: {item['values']}")  # Print the selected item values
-        if len(item['values']) == 5:
-            # Convert work_order and serial_number to strings
-            work_order = str(item['values'][0])  # Convert to string
-            serial_number = str(item['values'][1])  # Convert to string
-            print(f"Attempting to delete entry: Work Order: '{work_order}', Serial Number: '{serial_number}'")
+    selected_items = tree.selection()  # Get all selected items
+    if selected_items:
+        # Read the current log file
+        rows = []
+        entries_to_delete = []  # List to keep track of entries to delete
+        try:
+            with open(log_file, mode='r') as file:
+                reader = csv.reader(file)
+                header = next(reader)  # Read the header row
+                rows.append(header)  # Keep the header in the rows
+                for row in reader:
+                    # Ensure all values are treated as strings
+                    row = [str(value) for value in row]  # Convert all values to strings
+                    row_work_order = row[0].strip()  # Strip whitespace
+                    row_serial_number = row[1].strip()  # Strip whitespace
 
-            # Read the current log file
-            rows = []
-            entry_found = False  # Flag to check if the entry was found
-            try:
-                with open(log_file, mode='r') as file:
-                    reader = csv.reader(file)
-                    header = next(reader)  # Read the header row
-                    rows.append(header)  # Keep the header in the rows
-                    for row in reader:
-                        # Print the row values and their types for debugging
-                        print(f"Row values: {row}, Types: {[type(value) for value in row]}")
+                    # Check if the current row matches any selected item
+                    for item in selected_items:
+                        item_values = tree.item(item)['values']
+                        if len(item_values) == 5:
+                            selected_work_order = str(item_values[0]).strip()
+                            selected_serial_number = str(item_values[1]).strip()
+                            if row_work_order == selected_work_order and row_serial_number == selected_serial_number:
+                                entries_to_delete.append(row)  # Mark this entry for deletion
+                                break  # No need to check other selected items for this row
+                    else:
+                        # Only keep rows that do not match any selected entry
+                        rows.append(row)
 
-                        # Ensure all values are treated as strings
-                        row = [str(value) for value in row]  # Convert all values to strings
-                        row_work_order = row[0].strip()  # Strip whitespace
-                        row_serial_number = row[1].strip()  # Strip whitespace
+            # Write back the updated log
+            with open(log_file, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+                print("Log file updated after deletion.")
 
-                        print(f"Comparing: '{row_work_order}' with '{work_order.strip()}' and '{row_serial_number}' with '{serial_number.strip()}'")
+            # Remove the selected entries from the treeview
+            for item in selected_items:
+                tree.delete(item)
 
-                        # Only keep rows that do not match the selected entry
-                        if not (row_work_order == work_order.strip() and row_serial_number == serial_number.strip()):
-                            rows.append(row)
-                        else:
-                            entry_found = True  # Mark that we found the entry to delete
-                            print(f"Entry matched and will be deleted: {row}")
-
-                if entry_found:
-                    # Write back the updated log
-                    with open(log_file, mode='w', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerows(rows)
-                        print("Log file updated after deletion.")
-
-                    # Remove the entry from the treeview
-                    tree.delete(selected_item)
-
-                    # Update dashboard stats
-                    update_dashboard()
-                else:
-                    print("No matching entry found to delete.")
-                    messagebox.showwarning("Deletion Error", "No matching entry found to delete.")
-            except Exception as e:
-                print(f"An error occurred while processing the log file: {e}")
-                messagebox.showerror("File Error", f"An error occurred: {e}")
-        else:
-            messagebox.showwarning("Data Error", "Selected entry does not have the correct number of columns.")
+            # Update dashboard stats
+            update_dashboard()
+        except Exception as e:
+            print(f"An error occurred while processing the log file: {e}")
+            messagebox.showerror("File Error", f"An error occurred: {e}")
     else:
-        messagebox.showwarning("Selection Error", "Please select an entry to delete.")
+        messagebox.showwarning("Selection Error", "Please select at least one entry to delete.")
         
 # Function to handle editing an entry
 def handle_edit_entry():
