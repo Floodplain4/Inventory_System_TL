@@ -32,26 +32,19 @@ def update_status(work_order, serial_number, new_status):
         header = next(reader)  # Read the header row
         rows.append(header)  # Keep the header in the rows
         for row in reader:
-            print(f"Checking row: {row}")  # Debugging output
             if len(row) == 5:
-                print(f"Row details - Work Order: {row[0]}, Serial Number: {row[1]}, Status: {row[2]}")  # More detailed output
                 if row[0] == work_order and row[1] == serial_number:
-                    print(f"Match found. Updating status from {row[2]} to {new_status}")
-                    row[2] = new_status
-                    row[4] = timestamp
+                    row[2] = new_status  # Update the status
+                    row[4] = timestamp  # Update the timestamp
                     updated = True
-                    print(f"Updated row: {row}")
             rows.append(row)
 
     if updated:
         with open(log_file, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(rows)
-        print("Log file updated")
         display_log()  # Refresh log in UI
         update_dashboard()  # Refresh dashboard
-    else:
-        print("No matching entry found to update")
 
 # Function to display the log entries in the treeview
 def display_log():
@@ -95,111 +88,72 @@ def handle_update_status():
     if selected_item:
         item = tree.item(selected_item)
         if len(item['values']) == 5:
-            # Convert work_order and serial_number to strings
             work_order = str(item['values'][0])  # Ensure it's a string
             serial_number = str(item['values'][1])  # Ensure it's a string
             new_status = combo_update_status.get()
             if new_status:
                 update_status(work_order.strip(), serial_number.strip(), new_status)  # Strip whitespace
-                # Refresh the log to ensure the Treeview is updated
                 display_log()  # Refresh the displayed log
                 update_dashboard()  # Refresh the dashboard
                 combo_update_status.set('')
             else:
                 messagebox.showwarning("Input Error", "Please select a new status.")
-        else:
-            messagebox.showwarning("Data Error", "Selected entry does not have the correct number of columns.")
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to update.")
-        
+
 # Initialize sorting order for each column
 sort_order = {col: False for col in ["Work Order", "Serial Number", "Status", "Notes", "Timestamp"]}
 
 def sort_treeview(column_index):
     global sort_order
-    # Read the current data from the Treeview
     rows = [tree.item(item)['values'] for item in tree.get_children()]
-    
-    # Determine the column to sort by
     column = tree_columns[column_index]
-    
-    # Toggle the sorting order
     sort_order[column] = not sort_order[column]
-    
-    # Sort the rows based on the selected column
     rows.sort(key=lambda x: x[column_index], reverse=sort_order[column])
     
-    # Clear the Treeview and reinsert sorted data
     for item in tree.get_children():
         tree.delete(item)
     for row in rows:
         tree.insert('', 'end', values=row)
-        
+
 def handle_delete_entry():
-    selected_items = tree.selection()  # Get all selected items
+    selected_items = tree.selection()
     if selected_items:
-        # Read the current log file
-        rows = []
-        entries_to_delete = []  # List to keep track of entries to delete
-        try:
+        if messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the selected entry/entries?"):
+            rows = []
             with open(log_file, mode='r') as file:
                 reader = csv.reader(file)
-                header = next(reader)  # Read the header row
-                rows.append(header)  # Keep the header in the rows
+                header = next(reader)
+                rows.append(header)
                 for row in reader:
-                    # Ensure all values are treated as strings
-                    row = [str(value) for value in row]  # Convert all values to strings
-                    row_work_order = row[0].strip()  # Strip whitespace
-                    row_serial_number = row[1].strip()  # Strip whitespace
+                    if len(row) == 5:
+                        row_work_order = row[0].strip()
+                        row_serial_number = row[1].strip()
+                        if not any((row_work_order == str(tree.item(item)['values'][0]).strip() and
+                                     row_serial_number == str(tree.item(item)['values'][1]).strip()) for item in selected_items):
+                            rows.append(row)
 
-                    # Check if the current row matches any selected item
-                    for item in selected_items:
-                        item_values = tree.item(item)['values']
-                        if len(item_values) == 5:
-                            selected_work_order = str(item_values[0]).strip()
-                            selected_serial_number = str(item_values[1]).strip()
-                            if row_work_order == selected_work_order and row_serial_number == selected_serial_number:
-                                entries_to_delete.append(row)  # Mark this entry for deletion
-                                break  # No need to check other selected items for this row
-                    else:
-                        # Only keep rows that do not match any selected entry
-                        rows.append(row)
-
-            # Write back the updated log
             with open(log_file, mode='w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerows(rows)
-                print("Log file updated after deletion.")
 
-            # Remove the selected entries from the treeview
             for item in selected_items:
                 tree.delete(item)
 
-            # Update dashboard stats
             update_dashboard()
-        except Exception as e:
-            print(f"An error occurred while processing the log file: {e}")
-            messagebox.showerror("File Error", f"An error occurred: {e}")
     else:
         messagebox.showwarning("Selection Error", "Please select at least one entry to delete.")
-        
+
 # Function to handle editing an entry
 def handle_edit_entry():
     selected_item = tree.selection()
     if selected_item:
         item = tree.item(selected_item)
         if len(item['values']) == 5:
-            # Retrieve values from the selected item
             work_order, serial_number, status, notes, _ = item['values']
-            
-            # Ensure work_order and serial_number are strings
-            work_order = str(work_order)
-            serial_number = str(serial_number)
-            
             edit_window = Toplevel(root)
             edit_window.title("Edit Entry")
             
-            # Create and place the entry fields
             ttk.Label(edit_window, text="Work Order:").grid(row=0, column=0, padx=5, pady=5)
             edit_work_order = ttk.Entry(edit_window)
             edit_work_order.grid(row=0, column=1, padx=5, pady=5)
@@ -211,7 +165,7 @@ def handle_edit_entry():
             edit_serial_number.insert(0, serial_number)
             
             ttk.Label(edit_window, text="Status:").grid(row=2, column=0, padx=5, pady=5)
-            edit_status = ttk.Combobox(edit_window, values=["Ordered", "Pending", "Replaced", "Returned"])
+            edit_status = ttk.Combobox(edit_window, values=["Ordered", "Pending", "Replaced", "Returned", "Complete"])
             edit_status.grid(row=2, column=1, padx=5, pady=5)
             edit_status.set(status)
             
@@ -220,41 +174,32 @@ def handle_edit_entry():
             edit_notes.grid(row=3, column=1, padx=5, pady=5)
             edit_notes.insert(tk.END, notes)
             
-            # Save button function
             def save_edits():
-                new_work_order = edit_work_order.get().strip()  # Strip any leading/trailing spaces
-                new_serial_number = edit_serial_number.get().strip()  # Strip any leading/trailing spaces
+                new_work_order = edit_work_order.get().strip()
+                new_serial_number = edit_serial_number.get().strip()
                 new_status = edit_status.get()
                 new_notes = edit_notes.get("1.0", tk.END).strip()
                 
                 rows = []
                 with open(log_file, mode='r') as file:
                     reader = csv.reader(file)
-                    header = next(reader)  # Read the header row
-                    rows.append(header)  # Keep the header in the rows
+                    header = next(reader)
+                    rows.append(header)
                     for row in reader:
-                        # Convert row values to strings to avoid AttributeError
-                        row_work_order = str(row[0]).strip()
-                        row_serial_number = str(row[1]).strip()
-                        
-                        if row_work_order == work_order.strip() and row_serial_number == serial_number.strip():
-                            # Update the row with new values
-                            row = [new_work_order, new_serial_number, new_status, new_notes, row[4]]  # Keep the original timestamp
+                        if row[0].strip() == work_order and row[1].strip() == serial_number:
+                            row = [new_work_order, new_serial_number, new_status, new_notes, row[4]]
                         rows.append(row)
                 
                 with open(log_file, mode='w', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerows(rows)
                 
-                display_log()  # Refresh the displayed log
-                update_dashboard()  # Refresh the dashboard
-                edit_window.destroy()  # Close the edit window
+                display_log()
+                update_dashboard()
+                edit_window.destroy()
             
-            # Create and place the save button
             btn_save = ttk.Button(edit_window, text="Save", command=save_edits)
             btn_save.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
-        else:
-            messagebox.showwarning("Data Error", "Selected entry does not have the correct number of columns.")
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to edit.")
 
@@ -307,21 +252,20 @@ def search_log():
         tree.selection_set(closest_match)
         tree.focus(closest_match)
         tree.see(closest_match)  # Ensure it's visible in the view
-        
+
 # Function to update dashboard statistics
 def update_dashboard():
-    print("Updating dashboard...")
     total_entries = 0
     ordered_count = 0
     pending_count = 0
     replaced_count = 0
     returned_count = 0
+    complete_count = 0  # New count for "Complete"
     
     with open(log_file, mode='r') as file:
         reader = csv.reader(file)
         next(reader)  # Skip header row
         for row in reader:
-            print(row)  # Print each row to verify data
             total_entries += 1
             if row[2] == "Ordered":
                 ordered_count += 1
@@ -331,18 +275,15 @@ def update_dashboard():
                 replaced_count += 1
             elif row[2] == "Returned":
                 returned_count += 1
-    
-    print(f"Total Entries: {total_entries}")
-    print(f"Ordered: {ordered_count}")
-    print(f"Pending: {pending_count}")
-    print(f"Replaced: {replaced_count}")
-    print(f"Returned: {returned_count}")
+            elif row[2] == "Complete":  # Count for "Complete"
+                complete_count += 1
     
     lbl_total_entries.config(text=f"Total Entries: {total_entries}")
     lbl_ordered_count.config(text=f"Ordered: {ordered_count}")
     lbl_pending_count.config(text=f"Pending: {pending_count}")
     lbl_replaced_count.config(text=f"Replaced: {replaced_count}")
     lbl_returned_count.config(text=f"Returned: {returned_count}")
+    lbl_complete_count.config(text=f"Complete: {complete_count}")  # Update label for "Complete"
     root.update_idletasks()
 
 # Initialize the log file
@@ -354,11 +295,45 @@ root.title("LCD Tracking System")
 root.geometry("1009x743")
 root.configure(bg="#f0f0f0")
 
+# Configure styles
 style = ttk.Style()
-style.configure("TLabel", background="#f0f0f0")
-style.configure("TButton", background="#4CAF50", foreground="black")
-style.configure("TCombobox", background="white")
+style.configure("TLabel", background="#f0f0f0", font=("Helvetica", 12))
+style.configure("TButton", background="#4CAF50", foreground="black", font=("Helvetica", 10, "bold"))
+style.configure("TCombobox", background="white", font=("Helvetica", 10))
 style.configure("Treeview.Heading", font=("Helvetica", 10, "bold"))
+
+# Button hover effects
+def on_enter(e):
+    e.widget['background'] = '#45a049'  # Darker green on hover
+
+def on_leave(e):
+    e.widget['background'] = '#4CAF50'  # Original color
+
+# Tooltips class
+class ToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event):
+        if self.tooltip_window is not None:
+            return
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 25
+        self.tooltip_window = tk.Toplevel(self.widget)
+        self.tooltip_window.wm_overrideredirect(True)
+        self.tooltip_window.wm_geometry(f"+{x}+{y}")
+        label = tk.Label(self.tooltip_window, text=self.text, background="white", relief="solid", borderwidth=1)
+        label.pack()
+
+    def hide_tooltip(self, event):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
 
 # Create and place the search bar
 frame_search = ttk.LabelFrame(root, text="Search", padding=(10, 5))
@@ -369,6 +344,7 @@ entry_search.grid(row=0, column=1, padx=5, pady=5)
 
 btn_search = ttk.Button(frame_search, text="Search", command=search_log)
 btn_search.grid(row=0, column=2, padx=5, pady=5)
+ToolTip(btn_search, "Search for entries")
 
 # Create and place the refresh button and other buttons
 frame_buttons = ttk.Frame(root)
@@ -376,12 +352,15 @@ frame_buttons.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
 btn_refresh = ttk.Button(frame_buttons, text="Refresh Log", command=handle_refresh)
 btn_refresh.grid(row=0, column=0, padx=5, pady=5)
+ToolTip(btn_refresh, "Refresh the log entries")
 
 btn_export = ttk.Button(frame_buttons, text="Export to CSV", command=export_to_csv)
 btn_export.grid(row=0, column=1, padx=5, pady=5)
+ToolTip(btn_export, "Export log to CSV file")
 
 btn_import = ttk.Button(frame_buttons, text="Import from CSV", command=import_from_csv)
 btn_import.grid(row=0, column=2, padx=5, pady=5)
+ToolTip(btn_import, "Import log from CSV file")
 
 # Create and place widgets for adding a new entry
 frame_add_entry = ttk.LabelFrame(root, text="Add New Entry", padding=(10, 5))
@@ -396,7 +375,7 @@ entry_serial_number = ttk.Entry(frame_add_entry)
 entry_serial_number.grid(row=1, column=1, padx=5, pady=5)
 
 ttk.Label(frame_add_entry, text="Status:").grid(row=2, column=0, padx=5, pady=5)
-combo_status = ttk.Combobox(frame_add_entry, values=["Ordered", "Pending", "Replaced", "Returned"])
+combo_status = ttk.Combobox(frame_add_entry, values=["Ordered", "Pending", "Replaced", "Returned", "Complete"])
 combo_status.grid(row=2, column=1, padx=5, pady=5)
 
 ttk.Label(frame_add_entry, text="Notes:").grid(row=3, column=0, padx=5, pady=5)
@@ -410,23 +389,35 @@ scrollbar_notes.grid(row=3, column=2, sticky='ns')
 
 btn_add_entry = ttk.Button(frame_add_entry, text="Add Entry", command=handle_add_entry)
 btn_add_entry.grid(row=4, column=0, columnspan=3, padx=5, pady=5)
+btn_add_entry.bind("<Enter>", on_enter)
+btn_add_entry.bind("<Leave>", on_leave)
+ToolTip(btn_add_entry, "Add a new entry to the log")
 
 # Create and place widgets for updating the status of an entry
 frame_update_status = ttk.LabelFrame(root, text="Update Status", padding=(10, 5))
 frame_update_status.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
 
 ttk.Label(frame_update_status, text="New Status:").grid(row=0, column=0, padx=5, pady=5)
-combo_update_status = ttk.Combobox(frame_update_status, values=["Ordered", "Pending", "Replaced", "Returned"])
+combo_update_status = ttk.Combobox(frame_update_status, values=["Ordered", "Pending", "Replaced", "Returned", "Complete"])
 combo_update_status.grid(row=0, column=1, padx=5, pady=5)
 
 btn_update_status = ttk.Button(frame_update_status, text="Update Status", command=handle_update_status)
 btn_update_status.grid(row=0, column=2, padx=5, pady=5)
+btn_update_status.bind("<Enter>", on_enter)
+btn_update_status.bind("<Leave>", on_leave)
+ToolTip(btn_update_status, "Update the status of the selected entry")
 
 btn_delete_entry = ttk.Button(frame_update_status, text="Delete Entry", command=handle_delete_entry)
 btn_delete_entry.grid(row=0, column=3, padx=5, pady=5)
+btn_delete_entry.bind("<Enter>", on_enter)
+btn_delete_entry.bind("<Leave>", on_leave)
+ToolTip(btn_delete_entry, "Delete the selected entry")
 
 btn_edit_entry = ttk.Button(frame_update_status, text="Edit Entry", command=handle_edit_entry)
 btn_edit_entry.grid(row=0, column=4, padx=5, pady=5)
+btn_edit_entry.bind("<Enter>", on_enter)
+btn_edit_entry.bind("<Leave>", on_leave)
+ToolTip(btn_edit_entry, "Edit the selected entry")
 
 # Create and place a treeview widget for displaying the log entries
 frame_tree = ttk.Frame(root)
@@ -441,8 +432,6 @@ tree.pack(fill=tk.BOTH, expand=True)
 # Bind the sorting function to each column header
 for index, col in enumerate(tree_columns):
     tree.heading(col, text=col, command=lambda idx=index: sort_treeview(idx))
-
-tree.pack(fill=tk.BOTH, expand=True)
 
 # Add a scrollbar to the treeview
 scrollbar = ttk.Scrollbar(frame_tree, orient=tk.VERTICAL, command=tree.yview)
@@ -467,6 +456,9 @@ lbl_replaced_count.grid(row=3, column=0, padx=5, pady=5, sticky="w")
 
 lbl_returned_count = ttk.Label(frame_dashboard, text="Returned: 0", font=("Helvetica", 10, "bold"))
 lbl_returned_count.grid(row=4, column=0, padx=5, pady=5, sticky="w")
+
+lbl_complete_count = ttk.Label(frame_dashboard, text="Complete: 0", font=("Helvetica", 10, "bold"))  # New label for "Complete"
+lbl_complete_count.grid(row=5, column=0, padx=5, pady=5, sticky="w")
 
 # Display the initial log entries and update dashboard
 display_log()
