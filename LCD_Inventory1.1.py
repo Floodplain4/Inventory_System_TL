@@ -150,10 +150,17 @@ def handle_edit_entry():
     if selected_item:
         item = tree.item(selected_item)
         if len(item['values']) == 5:
+            # Retrieve values from the selected item
             work_order, serial_number, status, notes, _ = item['values']
+            
+            # Ensure work_order and serial_number are strings
+            work_order = str(work_order)
+            serial_number = str(serial_number)
+            
             edit_window = Toplevel(root)
             edit_window.title("Edit Entry")
             
+            # Create and place the entry fields
             ttk.Label(edit_window, text="Work Order:").grid(row=0, column=0, padx=5, pady=5)
             edit_work_order = ttk.Entry(edit_window)
             edit_work_order.grid(row=0, column=1, padx=5, pady=5)
@@ -165,7 +172,7 @@ def handle_edit_entry():
             edit_serial_number.insert(0, serial_number)
             
             ttk.Label(edit_window, text="Status:").grid(row=2, column=0, padx=5, pady=5)
-            edit_status = ttk.Combobox(edit_window, values=["Ordered", "Pending", "Replaced", "Returned", "Complete"])
+            edit_status = ttk.Combobox(edit_window, values=["Ordered", "Pending", "Replaced", "Returned"])
             edit_status.grid(row=2, column=1, padx=5, pady=5)
             edit_status.set(status)
             
@@ -174,32 +181,41 @@ def handle_edit_entry():
             edit_notes.grid(row=3, column=1, padx=5, pady=5)
             edit_notes.insert(tk.END, notes)
             
+            # Save button function
             def save_edits():
-                new_work_order = edit_work_order.get().strip()
-                new_serial_number = edit_serial_number.get().strip()
+                new_work_order = edit_work_order.get().strip()  # Strip any leading/trailing spaces
+                new_serial_number = edit_serial_number.get().strip()  # Strip any leading/trailing spaces
                 new_status = edit_status.get()
                 new_notes = edit_notes.get("1.0", tk.END).strip()
                 
                 rows = []
                 with open(log_file, mode='r') as file:
                     reader = csv.reader(file)
-                    header = next(reader)
-                    rows.append(header)
+                    header = next(reader)  # Read the header row
+                    rows.append(header)  # Keep the header in the rows
                     for row in reader:
-                        if row[0].strip() == work_order and row[1].strip() == serial_number:
-                            row = [new_work_order, new_serial_number, new_status, new_notes, row[4]]
+                        # Convert row values to strings to avoid AttributeError
+                        row_work_order = str(row[0]).strip()
+                        row_serial_number = str(row[1]).strip()
+                        
+                        if row_work_order == work_order.strip() and row_serial_number == serial_number.strip():
+                            # Update the row with new values
+                            row = [new_work_order, new_serial_number, new_status, new_notes, row[4]]  # Keep the original timestamp
                         rows.append(row)
                 
                 with open(log_file, mode='w', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerows(rows)
                 
-                display_log()
-                update_dashboard()
-                edit_window.destroy()
+                display_log()  # Refresh the displayed log
+                update_dashboard()  # Refresh the dashboard
+                edit_window.destroy()  # Close the edit window
             
+            # Create and place the save button
             btn_save = ttk.Button(edit_window, text="Save", command=save_edits)
             btn_save.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
+        else:
+            messagebox.showwarning("Data Error", "Selected entry does not have the correct number of columns.")
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to edit.")
 
