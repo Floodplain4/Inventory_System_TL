@@ -116,48 +116,20 @@ def copy_serial_number():
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to copy.")
 
-# Initialize sorting order for each column
-sort_order = {col: False for col in ["Work Order", "Serial Number", "Status", "Notes", "Timestamp"]}
-
-def sort_treeview(column_index):
-    global sort_order
-    rows = [tree.item(item)['values'] for item in tree.get_children()]
-    column = tree_columns[column_index]
-    sort_order[column] = not sort_order[column]
-    rows.sort(key=lambda x: x[column_index], reverse=sort_order[column])
-    
-    for item in tree.get_children():
-        tree.delete(item)
-    for row in rows:
-        tree.insert('', 'end', values=row)
-
-def handle_delete_entry():
-    selected_items = tree.selection()
-    if selected_items:
-        if messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the selected entry/entries?"):
-            rows = []
-            with open(log_file, mode='r') as file:
-                reader = csv.reader(file)
-                header = next(reader)
-                rows.append(header)
-                for row in reader:
-                    if len(row) == 5:
-                        row_work_order = row[0].strip()
-                        row_serial_number = row[1].strip()
-                        if not any((row_work_order == str(tree.item(item)['values'][0]).strip() and
-                                     row_serial_number == str(tree.item(item)['values'][1]).strip()) for item in selected_items):
-                            rows.append(row)
-
-            with open(log_file, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerows(rows)
-
-            for item in selected_items:
-                tree.delete(item)
-
-            update_dashboard()
+# Function to copy the selected work order number to the clipboard
+def copy_work_order_number():
+    selected_item = tree.selection()
+    if selected_item:
+        item = tree.item(selected_item)
+        if len(item['values']) == 5:
+            work_order = item['values'][0]  # Get the work order number
+            root.clipboard_clear()  # Clear the clipboard
+            root.clipboard_append(work_order)  # Append the work order number to the clipboard
+            messagebox.showinfo("Copied", f"Work Order '{work_order}' copied to clipboard.")
+        else:
+            messagebox.showwarning("Selection Error", "Selected entry does not have the correct number of columns.")
     else:
-        messagebox.showwarning("Selection Error", "Please select at least one entry to delete.")
+        messagebox.showwarning("Selection Error", "Please select an entry to copy.")
 
 # Function to handle editing an entry
 def handle_edit_entry():
@@ -233,6 +205,35 @@ def handle_edit_entry():
             messagebox.showwarning("Data Error", "Selected entry does not have the correct number of columns.")
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to edit.")
+
+# Function to handle deleting an entry
+def handle_delete_entry():
+    selected_items = tree.selection()
+    if selected_items:
+        if messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the selected entry/entries?"):
+            rows = []
+            with open(log_file, mode='r') as file:
+                reader = csv.reader(file)
+                header = next(reader)
+                rows.append(header)
+                for row in reader:
+                    if len(row) == 5:
+                        row_work_order = row[0].strip()
+                        row_serial_number = row[1].strip()
+                        if not any((row_work_order == str(tree.item(item)['values'][0]).strip() and
+                                     row_serial_number == str(tree.item(item)['values'][1]).strip()) for item in selected_items):
+                            rows.append(row)
+
+            with open(log_file, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+
+            for item in selected_items:
+                tree.delete(item)
+
+            update_dashboard()
+    else:
+        messagebox.showwarning("Selection Error", "Please select at least one entry to delete.")
 
 # Function to handle refreshing the log without removing returned entries
 def handle_refresh():
@@ -497,6 +498,22 @@ lbl_complete_count.grid(row=5, column=0, padx=5, pady=5, sticky="w")
 # Display the initial log entries and update dashboard
 display_log()
 update_dashboard()
+
+# Create a context menu
+context_menu = tk.Menu(root, tearoff=0)
+context_menu.add_command(label="Copy Serial Number", command=copy_serial_number)
+context_menu.add_command(label="Copy Work Order Number", command=copy_work_order_number)
+context_menu.add_command(label="Edit Entry", command=handle_edit_entry)
+context_menu.add_command(label="Delete Entry", command=handle_delete_entry)
+
+# Function to show the context menu
+def show_context_menu(event):
+    selected_item = tree.selection()
+    if selected_item:
+        context_menu.post(event.x_root, event.y_root)
+
+# Bind the right-click event to the treeview
+tree.bind("<Button-3>", show_context_menu)
 
 # Run the application
 root.mainloop()
