@@ -101,6 +101,21 @@ def handle_update_status():
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to update.")
 
+# Function to copy the selected serial number to the clipboard
+def copy_serial_number():
+    selected_item = tree.selection()
+    if selected_item:
+        item = tree.item(selected_item)
+        if len(item['values']) == 5:
+            serial_number = item['values'][1]  # Get the serial number
+            root.clipboard_clear()  # Clear the clipboard
+            root.clipboard_append(serial_number)  # Append the serial number to the clipboard
+            messagebox.showinfo("Copied", f"Serial Number '{serial_number}' copied to clipboard.")
+        else:
+            messagebox.showwarning("Selection Error", "Selected entry does not have the correct number of columns.")
+    else:
+        messagebox.showwarning("Selection Error", "Please select an entry to copy.")
+
 # Initialize sorting order for each column
 sort_order = {col: False for col in ["Work Order", "Serial Number", "Status", "Notes", "Timestamp"]}
 
@@ -310,6 +325,9 @@ root = tk.Tk()
 root.title("LCD Tracking System")
 root.geometry("1009x743")
 root.configure(bg="#f0f0f0")
+
+# Bind the Control-C key combination to the copy_serial_number function
+root.bind('<Control-c>', lambda event: copy_serial_number())
 
 # Configure styles
 style = ttk.Style()
