@@ -82,6 +82,26 @@ def handle_add_entry():
     else:
         messagebox.showwarning("Input Error", "Please fill in all fields.")
 
+# Function to search log entries and highlight the closest matching entry
+def search_log():
+    query = entry_search.get().strip().lower()
+    if not query:
+        return  # If search is empty, do nothing
+
+    closest_match = None
+    for item in tree.get_children():
+        values = tree.item(item, 'values')
+        if query in values[0].lower() or query in values[1].lower():
+            closest_match = item
+            break  # Stop at the first match
+
+    if closest_match:
+        tree.selection_set(closest_match)
+        tree.focus(closest_match)
+        tree.see(closest_match)  # Ensure it's visible in the view
+    else:
+        messagebox.showinfo("No Match", "No matching entries found.")
+
 # Function to handle updating the status of an entry
 def handle_update_status():
     selected_item = tree.selection()
@@ -267,24 +287,6 @@ def import_from_csv():
         update_dashboard()
         messagebox.showinfo("Import Successful", f"Log imported successfully from {import_file_path}")
 
-# Function to search log entries and highlight the closest matching entry
-def search_log():
-    query = entry_search.get().strip().lower()
-    if not query:
-        return  # If search is empty, do nothing
-
-    closest_match = None
-    for item in tree.get_children():
-        values = tree.item(item, 'values')
-        if query in values[0].lower() or query in values[1].lower():
-            closest_match = item
-            break  # Stop at the first match
-
-    if closest_match:
-        tree.selection_set(closest_match)
-        tree.focus(closest_match)
-        tree.see(closest_match)  # Ensure it's visible in the view
-
 # Function to update dashboard statistics
 def update_dashboard():
     total_entries = 0
@@ -376,6 +378,9 @@ frame_search.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 ttk.Label(frame_search, text="Search:").grid(row=0, column=0, padx=5, pady=5)
 entry_search = ttk.Entry(frame_search)
 entry_search.grid(row=0, column=1, padx=5, pady=5)
+
+# Bind the Enter key to the search_log function
+entry_search.bind('<Return>', lambda event: search_log())
 
 btn_search = ttk.Button(frame_search, text="Search", command=search_log)
 btn_search.grid(row=0, column=2, padx=5, pady=5)
