@@ -121,6 +121,47 @@ def handle_update_status():
     else:
         messagebox.showwarning("Selection Error", "Please select an entry to update.")
 
+# Initialize sorting order for each column
+sort_order = {col: False for col in ["Work Order", "Serial Number", "Status", "Notes", "Timestamp"]}
+ 
+def sort_treeview(column_index):
+     global sort_order
+     rows = [tree.item(item)['values'] for item in tree.get_children()]
+     column = tree_columns[column_index]
+     sort_order[column] = not sort_order[column]
+     rows.sort(key=lambda x: x[column_index], reverse=sort_order[column])
+     
+     for item in tree.get_children():
+         tree.delete(item)
+     for row in rows:
+         tree.insert('', 'end', values=row)
+ 
+def handle_delete_entry():
+     selected_items = tree.selection()
+     if selected_items:
+         if messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the selected entry/entries?"):
+             rows = []
+             with open(log_file, mode='r') as file:
+                 reader = csv.reader(file)
+                 header = next(reader)
+                 rows.append(header)
+                 for row in reader:
+                     if len(row) == 5:
+                         row_work_order = row[0].strip()
+                         row_serial_number = row[1].strip()
+                         if not any((row_work_order == str(tree.item(item)['values'][0]).strip() and
+                                      row_serial_number == str(tree.item(item)['values'][1]).strip()) for item in selected_items):
+                             rows.append(row)
+ 
+             with open(log_file, mode='w', newline='') as file:
+                 writer = csv.writer(file)
+                 writer.writerows(rows)
+ 
+             for item in selected_items:
+                 tree.delete(item)
+ 
+             update_dashboard()
+
 # Function to copy the selected serial number to the clipboard
 def copy_serial_number():
     selected_item = tree.selection()
