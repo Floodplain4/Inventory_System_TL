@@ -22,29 +22,33 @@ def add_entry(work_order, serial_number, status, notes):
         writer.writerow([work_order, serial_number, status, notes, timestamp])
 
 # Function to update the status of an entry in the log
-def update_status(work_order, serial_number, new_status):
+def update_status(selected_items, new_status):
     rows = []
     updated = False
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     with open(log_file, mode='r') as file:
         reader = csv.reader(file)
         header = next(reader)  # Read the header row
         rows.append(header)  # Keep the header in the rows
         for row in reader:
             if len(row) == 5:
-                if row[0] == work_order and row[1] == serial_number:
-                    row[2] = new_status  # Update the status
-                    row[4] = timestamp  # Update the timestamp
-                    updated = True
+                # Check if the current row matches any of the selected items
+                for item in selected_items:
+                    work_order = str(tree.item(item)['values'][0]).strip()
+                    serial_number = str(tree.item(item)['values'][1]).strip()
+                    if row[0] == work_order and row[1] == serial_number:
+                        row[2] = new_status  # Update the status
+                        row[4] = timestamp  # Update the timestamp
+                        updated = True
+                        break  # No need to check other items if we found a match
             rows.append(row)
-
     if updated:
         with open(log_file, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(rows)
         display_log()  # Refresh log in UI
         update_dashboard()  # Refresh dashboard
+
 
 # Function to display the log entries in the treeview
 def display_log():
@@ -104,22 +108,16 @@ def search_log():
 
 # Function to handle updating the status of an entry
 def handle_update_status():
-    selected_item = tree.selection()
-    if selected_item:
-        item = tree.item(selected_item)
-        if len(item['values']) == 5:
-            work_order = str(item['values'][0])  # Ensure it's a string
-            serial_number = str(item['values'][1])  # Ensure it's a string
-            new_status = combo_update_status.get()
-            if new_status:
-                update_status(work_order.strip(), serial_number.strip(), new_status)  # Strip whitespace
-                display_log()  # Refresh the displayed log
-                update_dashboard()  # Refresh the dashboard
-                combo_update_status.set('')
-            else:
-                messagebox.showwarning("Input Error", "Please select a new status.")
+    selected_items = tree.selection()
+    if selected_items:
+        new_status = combo_update_status.get()
+        if new_status:
+            update_status(selected_items, new_status)  # Pass the selected items and new status
+            combo_update_status.set('')  # Clear the status combobox
+        else:
+            messagebox.showwarning("Input Error", "Please select a new status.")
     else:
-        messagebox.showwarning("Selection Error", "Please select an entry to update.")
+        messagebox.showwarning("Selection Error", "Please select at least one entry to update.")
 
 # Initialize sorting order for each column
 sort_order = {col: False for col in ["Work Order", "Serial Number", "Status", "Notes", "Timestamp"]}
