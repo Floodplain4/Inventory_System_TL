@@ -457,6 +457,58 @@ def toggle_complete_entries():
     btn_toggle_complete.config(text="Show Complete Entries" if not show_complete_entries else "Hide Complete Entries")
     display_log()  # Refresh the log display
 
+# Add the LCD Script button and functionality
+btn_lcd_script = ttk.Button(frame_buttons, text="LCD Script", command=lambda: open_lcd_script_window())
+btn_lcd_script.grid(row=0, column=4, padx=5, pady=5)
+ToolTip(btn_lcd_script, "Open LCD script for easy copying")
+
+def select_all_text(event):
+    widget = event.widget
+    widget.after(1, lambda: widget.tag_add('sel', '1.0', 'end'))
+
+def open_lcd_script_window():
+    script_window = Toplevel(root)
+    script_window.title("LCD Script")
+    script_window.geometry("450x220")
+    script_window.resizable(False, False)
+
+    # First text box
+    text_box_1 = tk.Text(script_window, height=4, wrap=tk.WORD)
+    text_box_1.insert(tk.END, "Student dropped laptop which cracked the LCD.")
+    text_box_1.configure(state='normal')
+    text_box_1.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+    text_box_1.focus_set()
+    text_box_1.bind('<FocusIn>', select_all_text)
+
+    # Second text box
+    text_box_2 = tk.Text(script_window, height=4, wrap=tk.WORD)
+    text_box_2.insert(tk.END, "Replaced LCD. Laptop boots and displays image correctly.")
+    text_box_2.configure(state='normal')
+    text_box_2.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+    text_box_2.bind('<FocusIn>', select_all_text)
+
+    # Close button
+    btn_close = ttk.Button(script_window, text="Close", command=script_window.destroy)
+    btn_close.pack(pady=10)
+    # Bind Enter key on close button to invoke its command
+    btn_close.bind('<Return>', lambda event: script_window.destroy())
+
+    # List of widgets for tab order
+    focusable_widgets = [text_box_1, text_box_2, btn_close]
+
+    # Bind the Tab key to switch focus between text boxes and the close button
+    def focus_next_widget(event):
+        current_widget = event.widget
+        try:
+            next_index = (focusable_widgets.index(current_widget) + 1) % len(focusable_widgets)
+        except ValueError:
+            next_index = 0
+        focusable_widgets[next_index].focus_set()
+        return "break"  # Prevent default tab behavior
+
+    for widget in focusable_widgets:
+        widget.bind('<Tab>', focus_next_widget)
+
 # Create and place widgets for adding a new entry
 frame_add_entry = ttk.LabelFrame(root, text="Add New Entry", padding=(10, 5))
 frame_add_entry.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
