@@ -50,6 +50,9 @@ def update_status(selected_items, new_status):
         update_dashboard()  # Refresh dashboard
 
 
+# Variable to track visibility of complete entries
+show_complete_entries = True
+
 # Function to display the log entries in the treeview
 def display_log():
     for i in tree.get_children():
@@ -58,7 +61,8 @@ def display_log():
         reader = csv.reader(file)
         next(reader)  # Skip header row
         for row in reader:
-            tree.insert('', 'end', values=row)
+            if show_complete_entries or row[2] != "Complete":  # Check the status
+                tree.insert('', 'end', values=row)
 
 # Function to handle adding a new entry
 def handle_add_entry():
@@ -218,7 +222,7 @@ def handle_edit_entry():
             edit_serial_number.insert(0, serial_number)
             
             ttk.Label(edit_window, text="Status:").grid(row=2, column=0, padx=5, pady=5)
-            edit_status = ttk.Combobox(edit_window, values=["Ordered", "Pending", "Replaced", "Returned"])
+            edit_status = ttk.Combobox(edit_window, values=["Ordered", "Pending", "Replaced", "Returned", "Complete"])
             edit_status.grid(row=2, column=1, padx=5, pady=5)
             edit_status.set(status)
             
@@ -440,6 +444,18 @@ ToolTip(btn_export, "Export log to CSV file")
 btn_import = ttk.Button(frame_buttons, text="Import from CSV", command=import_from_csv)
 btn_import.grid(row=0, column=2, padx=5, pady=5)
 ToolTip(btn_import, "Import log from CSV file")
+
+# Add the toggle button for complete entries
+btn_toggle_complete = ttk.Button(frame_buttons, text="Hide Complete Entries", command=lambda: toggle_complete_entries())
+btn_toggle_complete.grid(row=0, column=3, padx=5, pady=5)
+ToolTip(btn_toggle_complete, "Show/Hide complete entries")
+
+# Function to toggle visibility of complete entries
+def toggle_complete_entries():
+    global show_complete_entries
+    show_complete_entries = not show_complete_entries  # Toggle the state
+    btn_toggle_complete.config(text="Show Complete Entries" if not show_complete_entries else "Hide Complete Entries")
+    display_log()  # Refresh the log display
 
 # Create and place widgets for adding a new entry
 frame_add_entry = ttk.LabelFrame(root, text="Add New Entry", padding=(10, 5))
