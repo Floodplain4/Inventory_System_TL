@@ -14,9 +14,9 @@ The refresh log button is outdated but I left it in as if you manually edit the 
 Enjoy my fancy sheet of paper!
 
 
-To use:
-Download release 1.4
-Extract files
-Run LCD1.4.exe
-There will be a security warning -> Run Anway
+To use ->
+Download release 1.4 ->
+Extract files ->
+Run LCD1.4.exe ->
+There will be a security warning -> more info -> Run Anway |
 lcd_log should automatically open but if not select import and import lcd_log.csv or Example.csv
