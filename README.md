@@ -56,4 +56,7 @@ All example data is fictional. Serial numbers and work orders are randomly gener
 No sensitive or proprietary data is included in this repo.
 
 🧑‍💻 About Me
+
 I'm a helpdesk tech learning programming on the side. This project was my attempt to make my day-to-day work more efficient and learn Python/Tkinter in the process.
+
+License: MIT License
