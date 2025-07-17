@@ -16,6 +16,8 @@ Supports importing previously exported logs
 
 Edits to CSVs reflected in-app via the Refresh Log button
 
+Parse text from Lenovo directly to auto populate fields for ease of use
+
 📦 How to Use
 Download the latest release (v1.4)
 
