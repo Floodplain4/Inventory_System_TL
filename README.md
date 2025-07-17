@@ -1,22 +1,59 @@
-# Inventory_System_TL
-Inventory system for Lenovo parts rotation at my job. 
+🧾 Lenovo Parts Inventory System (v1.4)
+A lightweight desktop inventory tracking tool built to manage Lenovo parts rotation at my job. This program was developed as a personal project to streamline how I handle repairs and hardware status updates.
 
+✨ Features
+Add and manage entries using:
 
-This is just a personal project for helping me manage some inventory at work. I am a mediocre coder and this program is essentially just a fancy sheet of paper. 
+Work Order
 
-Entries can be added by entering a work order number, serial number, status, and notes. 
-Status for each work order can be edited by selecting the entry, choosing a status from the drop down, and selecting update status. 
+Serial Number
 
-Program should automatically backup data because it writes to a CSV but I personally backup to a spare CSV manually using the export function.
+Status (e.g., Ordered, Pending, Replaced, Complete)
 
-The refresh log button is outdated but I left it in as if you manually edit the CSV and then hit refresh log the program will reflect those changes.
+Notes
 
-Enjoy my fancy sheet of paper!
+Update status quickly via dropdown menu and update button
 
+Automatically saves changes to lcd_log.csv
 
-To use ->
-Download release 1.4 ->
-Extract files ->
-Run LCD1.4.exe ->
-There will be a security warning -> more info -> Run Anway |
-lcd_log should automatically open but if not select import and import lcd_log.csv or Example.csv
+Manual backup/export supported via Export button
+
+Import existing logs (e.g., lcd_log.csv or Example.csv)
+
+Includes a sample dataset (Example.csv) for demonstration
+
+⚠️ Note: The Refresh Log button is deprecated. It still functions if you manually modify the CSV file and want to refresh the UI.
+
+🛠️ How to Use
+Download the latest Release 1.4 (link your .zip or .exe).
+
+Extract all files from the .zip.
+
+Run LCD1.4.exe (you may need to click "More Info" > "Run Anyway" due to unsigned code).
+
+On first run:
+
+lcd_log.csv should open automatically.
+
+If not, use the Import button to select either lcd_log.csv or Example.csv.
+
+📁 Files Included
+LCD1.4.exe – Main executable
+
+lcd_log.csv – Current working log (auto-saves here)
+
+Example.csv – Sample data for testing
+
+inventory_ui.py – Source code (optional if published)
+
+README.md – This file
+
+💡 Notes
+This was built as a personal tool — think of it as a "fancy sheet of paper" with buttons.
+
+All example data is fictional. Serial numbers and work orders are randomly generated for demonstration.
+
+No sensitive or proprietary data is included in this repo.
+
+🧑‍💻 About Me
+I'm a helpdesk tech learning programming on the side. This project was my attempt to make my day-to-day work more efficient and learn Python/Tkinter in the process.
