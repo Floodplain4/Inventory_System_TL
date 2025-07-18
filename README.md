@@ -16,14 +16,14 @@ Supports importing previously exported logs
 
 Edits to CSVs reflected in-app via the Refresh Log button
 
-Parse text from Lenovo directly to auto populate fields for ease of use
+Parse text from Lenovo directly to auto populate fields for ease of use from clipboard
 
 📦 How to Use
-Download the latest release (v1.4)
+Download the latest release (v1.5)
 
 Extract the files from the ZIP
 
-Run LCD1.4.exe
+Run LCD1.5.exe
 (Note: Windows may show a security warning — click More Info > Run Anyway)
 
 If lcd_log.csv doesn’t open automatically:
